@@ -1,4 +1,6 @@
 import sys
+import ast
+import operator
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QGridLayout,
     QPushButton, QLineEdit, QLabel, QHBoxLayout
@@ -82,7 +84,7 @@ class Calculator(QWidget):
         self.root.addLayout(top)
 
         # Display
-        self.display = QLineEdit()
+        self.display = QLineEdit("0")
         self.display.setFont(QFont("Segoe UI", 26))
         self.display.setAlignment(Qt.AlignRight)
         self.display.setFixedHeight(60)
@@ -99,30 +101,65 @@ class Calculator(QWidget):
             ("0",3,0),(".",3,1),("C",3,2),("+",3,3)
         ]
 
-        for t,r,c in layout:
+        for t, r, c in layout:
             btn = QPushButton(t)
             btn.setFont(QFont("Segoe UI", 14))
-            btn.clicked.connect(lambda _,x=t: self.press(x))
-            grid.addWidget(btn,r,c)
+            btn.clicked.connect(lambda _, x=t: self.press(x))
+            grid.addWidget(btn, r, c)
             self.buttons.append(btn)
 
         self.eq = QPushButton("=")
         self.eq.setFont(QFont("Segoe UI", 18))
         self.eq.clicked.connect(self.calculate)
-        grid.addWidget(self.eq,4,0,1,4)
+        grid.addWidget(self.eq, 4, 0, 1, 4)
 
         self.root.addLayout(grid)
 
-    # ---------- LOGIC ----------
+    # ---------- BUTTON LOGIC ----------
     def press(self, v):
         if v == "C":
-            self.display.clear()
+            self.display.setText("0")
         else:
-            self.display.insert(v)
+            if self.display.text() == "0":
+                self.display.setText(v)
+            else:
+                self.display.insert(v)
+
+    # ---------- SAFE CALCULATION ----------
+    def safe_eval(self, expr):
+        operators = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.USub: operator.neg
+        }
+
+        def eval_node(node):
+            if isinstance(node, ast.Constant):  # sayı
+                if isinstance(node.value, (int, float)):
+                    return node.value
+                raise ValueError
+            if isinstance(node, ast.BinOp):
+                return operators[type(node.op)](
+                    eval_node(node.left),
+                    eval_node(node.right)
+                )
+            if isinstance(node, ast.UnaryOp):
+                return operators[type(node.op)](
+                    eval_node(node.operand)
+                )
+            raise ValueError
+
+        tree = ast.parse(expr, mode="eval")
+        return eval_node(tree.body)
 
     def calculate(self):
         try:
-            self.display.setText(str(eval(self.display.text())))
+            result = self.safe_eval(self.display.text())
+            self.display.setText(str(result))
+        except ZeroDivisionError:
+            self.display.setText("∞")
         except:
             self.display.setText("Error")
 
@@ -184,3 +221,5 @@ app = QApplication(sys.argv)
 w = Calculator()
 w.show()
 sys.exit(app.exec())
+
+
