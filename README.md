@@ -15,7 +15,7 @@ A modern GUI calculator built with Python and PySide6, supporting multiple langu
 1. Clone the repository:
 
 ```bash
-git clone <your-repo-link>
+git clone <https://github.com/c8dhjp4tyv-bit/Calculator.git>
 cd <repo-folder>
 
     Create a virtual environment:
