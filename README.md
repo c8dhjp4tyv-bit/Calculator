@@ -1,3 +1,6 @@
+This project was built with the help of AI tools.
+The goal is learning and experimentation.
+
 A modern GUI calculator built with Python and PySide6, supporting multiple languages and light/dark themes.  
 
 ## Features
